@@ -30,10 +30,10 @@ WebState = {
         WebState.reload();
         loaders.forEach(l => l.style.display = "none");
     },
-    reload: () => {
+    reload: function() {
         for (let component of WebState.components) component();
     },
-    get: async(key) => {
+    get: async function(key) {
         const dependency = WebState.dependencies[key](WebState.state);
         if (dependency) {
             let records = await idbKeyval.get(dependency.table);
@@ -71,7 +71,7 @@ WebState = {
     upsert: () => {},
     delete: () => {},
     state: {},
-    init: async(params) => {
+    init: async function(params) {
         const user = await MemberStack.onReady;
         if (user.loggedIn === true) {
             const {
@@ -104,7 +104,7 @@ WebState = {
                         form.reset();
                     }
                 });
-                WebState.components.push(() => {
+                WebState.components.push(async () => {
                     console.log("Load values");
                     const elements = document.querySelectorAll("[data-webstate-field]");
                     for (let element of elements) {
