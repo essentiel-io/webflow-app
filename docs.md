@@ -15,6 +15,7 @@
 
 `<input>`
 - `name`: Nom du champs du record, est pré-rempli si un record de la table connecté au formulaire est actif
+- `data-ws-input-disabled`: Désactive un champs
 
 ### Listes
 `<div>`
