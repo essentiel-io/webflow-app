@@ -72,7 +72,7 @@ WebState = {
     if (user.loggedIn === true) {
       const { email, id } = user
       WebState.state.user = { memberstack_id: id, email, toLoad: true };
-      WebState = { ...Webstate, ...params };
+      WebState = { ...WebState, ...params };
       document.onload = () => {
         const forms = document.querySelectorAll("form");
 				forms.forEach(form => {
@@ -88,7 +88,7 @@ WebState = {
 						form.reset();
 					}
 				});
-				Webstate.components.push(() => {
+				WebState.components.push(() => {
 					console.log("Load values");
 					const elements = document.querySelectorAll("[data-webstate-field]");
 					for (let element of elements) {
@@ -99,7 +99,7 @@ WebState = {
 						element.disabled = element.getAttribute("data-webstate-disabled");
 					}
 				});
-        Webstate.reload();
+        WebState.reload();
 				WebState.request('syncDB');
       }
     }
