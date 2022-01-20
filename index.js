@@ -3,7 +3,7 @@ WebState = {
         const loaders = document.getElementsByClassName("loader");
         loaders.forEach((l) => l.style.display = "inherit");
         const body = {
-            state: await idbKeyval.get("state")
+            state: (await idbKeyval.get("state")) || {}
         };
         if (data) body.data = data;
         const {
@@ -125,14 +125,6 @@ WebState = {
     init: function() {
         MemberStack.onReady.then(async function(user) {
             if (user.loggedIn === true) {
-                const activeUser = await WebState.getActive("user");
-                if (!activeUser) {
-                    await idbKeyval.set("state", {
-                        user: { 
-                            memberstack_id: user.id
-                        } 
-                    });
-                }
                 document.onload = WebState.build();
                 await WebState.run('sync');
                 console.log("Init done!");
