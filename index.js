@@ -60,7 +60,7 @@ WebState = {
         return records;
     },
     getActive: async function(name) {
-        const state = await idbKeyval.get("state");
+        const state = (await idbKeyval.get("state")) || {};
         return state[name];
     },
     setActive: async function(name, table, id) {
@@ -127,12 +127,15 @@ WebState = {
     init: async function(params) {
         const user = await MemberStack.onReady;
         if (user.loggedIn === true) {
-            await idbKeyval.set("state", {
-                user: { 
-                    memberstack_id: user.id, 
-                    email: user.email
-                } 
-            });
+            const activeUser = await WebState.getActive("user");
+            if (!activeUser) {
+                await idbKeyval.set("state", {
+                    user: { 
+                        memberstack_id: user.id, 
+                        email: user.email
+                    } 
+                });
+            }
             document.onload = WebState.build();
             await WebState.run('sync');
             console.log("Init done!");
