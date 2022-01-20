@@ -1,16 +1,15 @@
 // Init WebState
 WebState = {
-    run: async function(endpoint, params = null) {
+    run: async function(endpoint, data = null) {
         const loaders = document.getElementsByClassName("loader");
         loaders.forEach((l) => l.style.display = "inherit");
-        const data = {
+        const body = {
             state: await idbKeyval.get("state")
         };
-        if (params) data.params = params;
-        console.log(endpoint, data);
+        if (data) body.data = data;
         const {
             data: { tables, updatedState }
-        } = await axios.post("https://dev--solucyon-backend.thomas-essentiel.autocode.gg/" + endpoint, data)
+        } = await axios.post("https://dev--solucyon-backend.thomas-essentiel.autocode.gg/" + endpoint, body)
             .catch(function (error) {
                 alert(error.message);
                 if (error.response) {
