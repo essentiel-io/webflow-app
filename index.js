@@ -124,22 +124,24 @@ WebState = {
             }
         });*/
     },
-    init: async function(params) {
-        const user = await MemberStack.onReady;
-        if (user.loggedIn === true) {
-            const activeUser = await WebState.getActive("user");
-            if (!activeUser) {
-                await idbKeyval.set("state", {
-                    user: { 
-                        memberstack_id: user.id, 
-                        email: user.email
-                    } 
-                });
+    init: function() {
+        MemberStack.onReady.then(async function(user) {
+            if (user.loggedIn === true) {
+                const activeUser = await WebState.getActive("user");
+                if (!activeUser) {
+                    await idbKeyval.set("state", {
+                        user: { 
+                            memberstack_id: user.id
+                        } 
+                    });
+                }
+                document.onload = WebState.build();
+                await WebState.run('sync');
+                console.log("Init done!");
+            } else {
+                await idbKeyval.clear();
             }
-            document.onload = WebState.build();
-            await WebState.run('sync');
-            console.log("Init done!");
-        }
+        });
     }
 }
 WebState.init();
