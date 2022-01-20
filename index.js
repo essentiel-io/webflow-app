@@ -1,16 +1,14 @@
-// Init WebState
 WebState = {
-    run: async function(endpoint, params = null) {
+    run: async function(endpoint, data = null) {
         const loaders = document.getElementsByClassName("loader");
         loaders.forEach((l) => l.style.display = "inherit");
-        const data = {
+        const body = {
             state: await idbKeyval.get("state")
         };
-        if (params) data.params = params;
-        console.log(endpoint, data);
+        if (data) body.data = data;
         const {
             data: { tables, updatedState }
-        } = await axios.post("https://dev--solucyon-backend.thomas-essentiel.autocode.gg/" + endpoint, data)
+        } = await axios.post("https://dev--solucyon-backend.thomas-essentiel.autocode.gg/" + endpoint, body)
             .catch(function (error) {
                 alert(error.message);
                 if (error.response) {
@@ -61,7 +59,7 @@ WebState = {
         return records;
     },
     getActive: async function(name) {
-        const state = await idbKeyval.get("state");
+        const state = (await idbKeyval.get("state")) || {};
         return state[name];
     },
     setActive: async function(name, table, id) {
@@ -96,48 +94,49 @@ WebState = {
     },
     build: async function() {
         // TODO : Build app's components
-        /*const forms = document.querySelectorAll("form");
+        
+        // Forms
+        const forms = document.querySelectorAll('form["data-ws-form-onsubmit"]');
         forms.forEach(form => {
-            form.onsubmit = event => {
+            const [table, action] = form.getAttribute("data-ws-form-onsubmit").split(".");
+            const fields = form.querySelectorAll("input");
+            
+            form.onsubmit = async function(event) {
                 event.preventDefault();
                 const data = new FormData(form);
                 let record = {};
                 for (const [name, value] of data) {
                     record[name] = value;
                 }
-                const table = form.getAttribute("data-webstate-table")
-                WebState.upsert({
-                    table,
-                    records: [record]
-                });
-                form.reset();
+                if (action === "insert" | action === "upsert") {
+                    const result = await WebState.upsert({
+                        table,
+                        records: [record]
+                    });
+                }
+                if (action === "insert") form.reset();
             }
         });
-        WebState.components.push(async () => {
-            console.log("Load values");
-            const elements = document.querySelectorAll("[data-webstate-field]");
-            for (let element of elements) {
-                const path = element.getAttribute("data-webstate-field");
-                const [dependency, field] = path.split('.');
-                const record = await WebState.get(dependency);
-                element.value = record[field];
-                element.disabled = element.getAttribute("data-webstate-disabled");
-            }
-        });*/
+        console.log('Build done!');
     },
-    init: async function(params) {
-        const user = await MemberStack.onReady;
-        if (user.loggedIn === true) {
-            await idbKeyval.set("state", {
-                user: { 
-                    memberstack_id: user.id, 
-                    email: user.email
-                } 
-            });
-            document.onload = WebState.build();
-            await WebState.run('sync');
-            console.log("Init done!");
-        }
+    init: function() {
+        MemberStack.onReady.then(async function(user) {
+            if (user.loggedIn === true) {
+                const activeUser = await WebState.getActive("user");
+                if (!activeUser) {
+                    await idbKeyval.set("state", {
+                        user: { 
+                            memberstack_id: user.id
+                        } 
+                    });
+                }
+                document.onload = WebState.build();
+                await WebState.run('sync');
+                console.log("Init done!");
+            } else {
+                await idbKeyval.clear();
+            }
+        });
     }
 }
 WebState.init();
