@@ -99,7 +99,7 @@ WebState = {
         // TODO : Build app's components
         
         // Forms
-        const forms = document.querySelectorAll('form["data-ws-form-onsubmit"]');
+        const forms = document.querySelectorAll('form[data-ws-form-onsubmit]');
         forms.forEach(form => {
             const [table, action] = form.getAttribute("data-ws-form-onsubmit").split(".");
             const fields = form.querySelectorAll("input");
