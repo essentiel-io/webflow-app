@@ -8,17 +8,18 @@ WebState = {
         if (data) body.data = data;
         const {
             data: { tables, updatedState }
-        } = await axios.post("https://dev--solucyon-backend.thomas-essentiel.autocode.gg/" + endpoint, body)
-            .catch(function (error) {
-                alert(error.message);
-                if (error.response) {
-                    console.log(error.response.data);
-                } else if (error.request) {
-                    console.log(error.request);
-                } else {
-                    console.log("Error", error.message);
-                }
-            });
+        } = await axios.post("https://dev--solucyon-backend.thomas-essentiel.autocode.gg/" + endpoint, body, {
+            "User-Token": MemberStack.getToken()
+        }).catch(function (error) {
+            alert(error.message);
+            if (error.response) {
+                console.log(error.response.data);
+            } else if (error.request) {
+                console.log(error.request);
+            } else {
+                console.log("Error", error.message);
+            }
+        });
         await idbKeyval.setMany(Object.keys(tables).map((table) => ([table, tables[table]])));
         await idbKeyval.set("state", updatedState);
         await WebState.build();
