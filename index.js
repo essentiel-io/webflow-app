@@ -1,4 +1,3 @@
-// Init WebState
 WebState = {
     run: async function(endpoint, data = null) {
         const loaders = document.getElementsByClassName("loader");
@@ -95,34 +94,30 @@ WebState = {
     },
     build: async function() {
         // TODO : Build app's components
-        /*const forms = document.querySelectorAll("form");
+        
+        // Forms
+        const forms = document.querySelectorAll('form["data-ws-form-onsubmit"]');
         forms.forEach(form => {
-            form.onsubmit = event => {
+            const [table, action] = form.getAttribute("data-ws-form-onsubmit").split(".");
+            const fields = form.querySelectorAll("input");
+            
+            form.onsubmit = async function(event) {
                 event.preventDefault();
                 const data = new FormData(form);
                 let record = {};
                 for (const [name, value] of data) {
                     record[name] = value;
                 }
-                const table = form.getAttribute("data-webstate-table")
-                WebState.upsert({
-                    table,
-                    records: [record]
-                });
-                form.reset();
+                if (action === "insert" | action === "upsert") {
+                    const result = await WebState.upsert({
+                        table,
+                        records: [record]
+                    });
+                }
+                if (action === "insert") form.reset();
             }
         });
-        WebState.components.push(async () => {
-            console.log("Load values");
-            const elements = document.querySelectorAll("[data-webstate-field]");
-            for (let element of elements) {
-                const path = element.getAttribute("data-webstate-field");
-                const [dependency, field] = path.split('.');
-                const record = await WebState.get(dependency);
-                element.value = record[field];
-                element.disabled = element.getAttribute("data-webstate-disabled");
-            }
-        });*/
+        console.log('Build done!');
     },
     init: function() {
         MemberStack.onReady.then(async function(user) {
