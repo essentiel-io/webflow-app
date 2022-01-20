@@ -72,24 +72,24 @@ WebState = {
         return state[name];
     },
     upsert: async function(table, records) {
-        let table = await idbKeyval.get(table);
+        let data = await idbKeyval.get(table);
         for (let record of records) {
             if (record.id) {
-                const index = table.findIndex(r => r.id === record.id);
-                table[index] = record;
+                const index = data.findIndex(r => r.id === record.id);
+                data[index] = record;
             } else {
-                table.push(record);
+                data.push(record);
             }
         }
-        await idbKeyval.set(table);
+        await idbKeyval.set(table, data);
         WebState.build();
         await WebState.run("upsert", { table, records });
         console.log("Upsert done!");
     },
     archive: async function(table, ids) {
-        let table = await idbKeyval.get(table);
-        table = table.filter(r => ids.indexOf(r.id) === -1);
-        await idbKeyval.set(table);
+        let data = await idbKeyval.get(table);
+        data = data.filter(r => ids.indexOf(r.id) === -1);
+        await idbKeyval.set(table, data);
         WebState.build();
         await WebState.run("archive", { table, ids });
         console.log("Archive done!");
