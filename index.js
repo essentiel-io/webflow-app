@@ -4,7 +4,7 @@ WebState = {
         const loaders = document.getElementsByClassName("loader");
         loaders.forEach((l) => l.style.display = "inherit");
         const {
-            data: tables
+            data: { tables, updatedState }
         } = await axios.post("https://dev--solucyon-backend.thomas-essentiel.autocode.gg/" + endpoint, {
             state: await idbKeyval.get("state")
         }).catch(function (error) {
@@ -18,6 +18,7 @@ WebState = {
             }
         });
         await idbKeyval.setMany(Object.keys(tables).map((table) => ([table, tables[table]])));
+        await idbKeyval.set("state", updatedState);
         await WebState.build();
         loaders.forEach(l => l.style.display = "none");
     },
@@ -98,7 +99,10 @@ WebState = {
         const user = await MemberStack.onReady;
         if (user.loggedIn === true) {
             await idbKeyval.set("state", {
-                users: user.id
+                user: { 
+                    memberstack_id: user.id, 
+                    email: user.email
+                } 
             });
             document.onload = WebState.build();
             await WebState.run('syncDB');
