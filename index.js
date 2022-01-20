@@ -10,7 +10,7 @@ WebState = {
             data: { tables, updatedState }
         } = await axios.post("https://dev--solucyon-backend.thomas-essentiel.autocode.gg/" + endpoint, body, {
             headers: {
-                "User-Token": MemberStack.getToken()
+                "Authorization": "Bearer " + MemberStack.getToken()
             }
         }).catch(function (error) {
             alert(error.message);
