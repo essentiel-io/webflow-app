@@ -9,7 +9,9 @@ WebState = {
         const {
             data: { tables, updatedState }
         } = await axios.post("https://dev--solucyon-backend.thomas-essentiel.autocode.gg/" + endpoint, body, {
-            "User-Token": MemberStack.getToken()
+            headers: {
+                "User-Token": MemberStack.getToken()
+            }
         }).catch(function (error) {
             alert(error.message);
             if (error.response) {
