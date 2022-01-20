@@ -39,7 +39,7 @@
 
 ### Boutons
 `<button>`, `<a>`
-- `data-ws-button-onclick`: run.(Nom de l'action)|delete|setActive (L'activation se base sur un ID et une table récupérés plus haut dans l'arbre HTML)
+- `data-ws-button-onclick`: run.(Nom de l'action)|archive|setActive (L'activation se base sur un ID et une table récupérés plus haut dans l'arbre HTML)
 
 ### Textes
 `<h1-6>`, `<p>`
@@ -47,8 +47,8 @@
 
 ## Javascript
 - `getTable(table, fields, filters:{ key, operator, value })`
-- `getActive(table)`
-- `setActive(table, id)`
+- `getActive(name)`
+- `setActive(name, table, id)`
 - `upsert(table, records)`
-- `delete(table, ids)`
+- `archive(table, ids)`
 - `run(action, id)`
