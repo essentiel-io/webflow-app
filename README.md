@@ -2,9 +2,10 @@
 
 ## Philosophie
 - Toutes les données de l'application accessible à l'utilisateur sont disponibles côté Client et mise à jour à chaque requête.
-- La DB Serveur est synchronisées après le schangements effectués sur la DB Client.
+- La DB Serveur est synchronisées après les changements effectués sur la DB Client.
+- La recherche est effectuée via Algolia, synchronisée avec la DB Server.
 - L'application est designée à 100% dans Webflow, les composants sont enrichis par l'API suivant leur configuration.
-- Les données en cours d'utilisation (active) sont accessible dans l'état de l'application
+- Les données en cours d'utilisation (active) sont accessible dans l'état de l'application.
 
 ## Composants
 
