@@ -7,7 +7,7 @@ WebState = {
             state: await idbKeyval.get("state")
         };
         if (params) data.params = params;
-        console.log(data);
+        console.log(endpoint, data);
         const {
             data: { tables, updatedState }
         } = await axios.post("https://dev--solucyon-backend.thomas-essentiel.autocode.gg/" + endpoint, data)
