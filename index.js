@@ -3,22 +3,25 @@ WebState = {
         const loaders = document.getElementsByClassName("loader");
         loaders.forEach((l) => l.style.display = "inherit");
         const body = {
-            state: await idbKeyval.get("state")
+            state: (await idbKeyval.get("state")) || {}
         };
         if (data) body.data = data;
         const {
             data: { tables, updatedState }
-        } = await axios.post("https://dev--solucyon-backend.thomas-essentiel.autocode.gg/" + endpoint, body)
-            .catch(function (error) {
-                alert(error.message);
-                if (error.response) {
-                    console.log(error.response.data);
-                } else if (error.request) {
-                    console.log(error.request);
-                } else {
-                    console.log("Error", error.message);
-                }
-            });
+        } = await axios.post("https://dev--solucyon-backend.thomas-essentiel.autocode.gg/" + endpoint, body, {
+            headers: {
+                "x-access-token": MemberStack.getToken()
+            }
+        }).catch(function (error) {
+            alert(error.message);
+            if (error.response) {
+                console.log(error.response.data);
+            } else if (error.request) {
+                console.log(error.request);
+            } else {
+                console.log("Error", error.message);
+            }
+        });
         await idbKeyval.setMany(Object.keys(tables).map((table) => ([table, tables[table]])));
         await idbKeyval.set("state", updatedState);
         await WebState.build();
@@ -96,7 +99,7 @@ WebState = {
         // TODO : Build app's components
         
         // Forms
-        const forms = document.querySelectorAll('form["data-ws-form-onsubmit"]');
+        const forms = document.querySelectorAll('form[data-ws-form-onsubmit]');
         forms.forEach(form => {
             const [table, action] = form.getAttribute("data-ws-form-onsubmit").split(".");
             const fields = form.querySelectorAll("input");
@@ -122,14 +125,6 @@ WebState = {
     init: function() {
         MemberStack.onReady.then(async function(user) {
             if (user.loggedIn === true) {
-                const activeUser = await WebState.getActive("user");
-                if (!activeUser) {
-                    await idbKeyval.set("state", {
-                        user: { 
-                            memberstack_id: user.id
-                        } 
-                    });
-                }
                 document.onload = WebState.build();
                 await WebState.run('sync');
                 console.log("Init done!");
