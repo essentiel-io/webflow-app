@@ -66,7 +66,7 @@ WebState = {
     },
     build: async function() {
         // TODO : Build app's components
-        const forms = document.querySelectorAll("form");
+        /*const forms = document.querySelectorAll("form");
         forms.forEach(form => {
             form.onsubmit = event => {
                 event.preventDefault();
@@ -93,7 +93,7 @@ WebState = {
                 element.value = record[field];
                 element.disabled = element.getAttribute("data-webstate-disabled");
             }
-        });
+        });*/
     },
     init: async function(params) {
         const user = await MemberStack.onReady;
