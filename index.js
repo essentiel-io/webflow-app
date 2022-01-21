@@ -1,4 +1,7 @@
 WebState = {
+  getStateNameFromTable: function(table) {
+    table.replace(/s$/, '');
+  },
   run: async function(endpoint, data = null) {
     const loaders = document.getElementsByClassName('loader');
     loaders.forEach((l) => l.style.display = 'inherit');
@@ -81,8 +84,16 @@ WebState = {
     await idbKeyval.set('state', state);
     return state[name];
   },
-  upsert: async function(table, records) {
-    const data = await idbKeyval.get(table);
+  upsert: async function(table, records, insertOnly = false) {
+    let data;
+    let state;
+    if (insertOnly === true) {
+      data = await idbKeyval.get(table);
+    } else if (records.length === 1) {
+      const values = await idbKeyval.getMany([table, 'state']);
+      data = values[0];
+      state = values[1];
+    }
     for (const record of records) {
       if (record.id) {
         const index = data.findIndex((r) => r.id === record.id);
@@ -91,31 +102,35 @@ WebState = {
         data.push(record);
       }
     }
-    await idbKeyval.set(table, data);
+    if (insertOnly === true) {
+      await idbKeyval.set(table, data);
+    } else if (records.length === 1) {
+      state[WebState.getStateNameFromTable(table)] = records[0];
+      await idbKeyval.setMany([table, 'state'], [data, state]);
+    }
     WebState.build();
-    await WebState.run('upsert', {
+    const results = await WebState.run('upsert', {
       table,
       records,
     });
     console.log('Upsert done!');
+    return results;
   },
   archive: async function(table, ids) {
     let data = await idbKeyval.get(table);
     data = data.filter((r) => ids.indexOf(r.id) === -1);
     await idbKeyval.set(table, data);
     WebState.build();
-    await WebState.run('archive', {
+    const results = await WebState.run('archive', {
       table,
       ids,
     });
     console.log('Archive done!');
+    return results;
   },
   build: async function() {
     // Get State
-    const state = (await idbKeyval.get('state')) || {};
-
-    // Get State Name From Table Name
-    const getStateName = (table) => table.replace(/s$/, '');
+    const components = [];
 
     // Get Parent Element Matches Selector
     const getClosest = function(elem, selector) {
@@ -132,18 +147,21 @@ WebState = {
         action,
         tableOrEndpoint,
       ] = form.getAttribute('data-ws-form').split('.');
-      (function prefill(record) {
-        const activeRecord = record || state[getStateName(tableOrEndpoint)];
-        if (!!activeRecord) {
-          form.setAttribute('data-ws-record-id', activeRecord.id);
-          const fields = form.querySelectorAll('input');
-          for (let j = 0, field; field = fields[j]; j++) {
-            const name = field.getAttribute('name');
-            field.value = activeRecord[name];
-            field.disabled = !!field.getAttribute('data-ws-disabled');
+      components.push({
+        dependency: 'state',
+        hydrate: function(state) {
+          const record = state[WebState.getStateNameFromTable(tableOrEndpoint)];
+          if (!!record) {
+            form.setAttribute('data-ws-record-id', record.id);
+            const fields = form.querySelectorAll('input:not([type="submit"])');
+            for (let j = 0, field; field = fields[j]; j++) {
+              const name = field.getAttribute('name');
+              field.value = record[name];
+              field.disabled = !!field.getAttribute('data-ws-disabled');
+            }
           }
-        }
-      })();
+        },
+      });
       form.onsubmit = async function(event) {
         event.preventDefault();
         const data = new FormData(form);
@@ -154,18 +172,14 @@ WebState = {
         switch (action) {
           case 'insert':
             form.reset();
-            await WebState.upsert(tableOrEndpoint, [record]);
+            await WebState.upsert(tableOrEndpoint, [record], true);
             break;
           case 'upsert':
-            const table = tableOrEndpoint;
-            const [result] = await WebState.upsert(table, [record]);
-            await WebState.setActive(getTableName(table), table, result.id);
-            prefill(result);
+            await WebState.upsert(tableOrEndpoint, [record]);
             break;
           case 'run':
             form.reset();
-            const endpoint = tableOrEndpoint;
-            await WebState.run(endpoint, record);
+            await WebState.run(tableOrEndpoint, record);
             break;
           default:
             break;
@@ -201,7 +215,9 @@ WebState = {
             await WebState.run(endpoint, record);
             break;
           case 'setActive':
-            await WebState.setActive(getStateName(table), table, recordId);
+            await WebState.setActive(
+                WebState.getStateNameFromTable(table), table, recordId,
+            );
             break;
           case 'archive':
             await WebState.archive(table, [recordId]);
@@ -216,8 +232,25 @@ WebState = {
     const texts = document.querySelectorAll('[data-ws-field]');
     for (let i = 0, text; text = texts[i]; i++) {
       const [name, field] = text.getAttribute('data-ws-field').split('.');
-      const record = state[name];
-      text.innerText = !!record && record[field];
+      components.push({
+        dependency: 'state',
+        hydrate: function(state) {
+          const record = state[name];
+          text.innerText = !!record && record[field];
+        },
+      });
+    }
+
+    // Load Data Into Components
+    const dependencies = components
+        .map((c) => c.dependency)
+        .filter((value, index, self) => {
+          return self.indexOf(value) === index;
+        });
+    const data = await idbKeyval.getMany(dependencies);
+    for (const component of components) {
+      const index = dependencies.findIndex((d) => component.dependency === d);
+      component.hydrate(data[index]);
     }
 
     console.log('Build done!');
