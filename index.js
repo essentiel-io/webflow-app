@@ -8,7 +8,7 @@ WebState = {
         if (data) body.data = data;
         const {
             data: { tables, updatedState }
-        } = await axios.post("https://dev--solucyon-backend.thomas-essentiel.autocode.gg/" + endpoint, body, {
+        } = await axios.post("https://api.solucyon.com/" + endpoint, body, {
             headers: {
                 "x-access-token": MemberStack.getToken()
             }
