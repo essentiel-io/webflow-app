@@ -158,6 +158,10 @@ WebState = {
               const name = field.getAttribute('name');
               field.value = record[name];
               field.disabled = !!field.getAttribute('data-ws-disabled');
+              console.log(
+                  `Hydrate ${name} of ${tableOrEndpoint} ` +
+                  `with "${record[name]}"`,
+              );
             }
           }
         },
@@ -237,17 +241,21 @@ WebState = {
         hydrate: function(state) {
           const record = state[name];
           text.innerText = !!record && record[field];
+          console.log(`Hydrate ${field} of ${name} with "${record[field]}"`);
         },
       });
     }
 
     // Load Data Into Components
+    console.log('Components', components.length);
     const dependencies = components
         .map((c) => c.dependency)
         .filter((value, index, self) => {
           return self.indexOf(value) === index;
         });
+    console.log('Dependencies', dependencies);
     const data = await idbKeyval.getMany(dependencies);
+    console.log('Data', data);
     for (const component of components) {
       const index = dependencies.findIndex((d) => component.dependency === d);
       component.hydrate(data[index]);
