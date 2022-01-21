@@ -149,6 +149,7 @@ WebState = {
       ] = form.getAttribute('data-ws-form').split('.');
       components.push({
         dependency: 'state',
+        name: `Form ${action}.${tableOrEndpoint}`,
         hydrate: function(state) {
           const record = state[WebState.getStateNameFromTable(tableOrEndpoint)];
           if (!!record) {
@@ -238,6 +239,7 @@ WebState = {
       const [name, field] = text.getAttribute('data-ws-field').split('.');
       components.push({
         dependency: 'state',
+        name: `Text ${name}.${field}`,
         hydrate: function(state) {
           const record = state[name];
           text.innerText = !!record && record[field];
@@ -247,7 +249,7 @@ WebState = {
     }
 
     // Load Data Into Components
-    console.log('Components', components.length);
+    console.log('Components', components.map((c) => c.name));
     const dependencies = components
         .map((c) => c.dependency)
         .filter((value, index, self) => {
