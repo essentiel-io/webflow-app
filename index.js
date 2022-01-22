@@ -3,10 +3,12 @@ WebState = {
     return table.replace(/s$/, '');
   },
   run: async function(endpoint, data = null) {
+    console.log(`Run ${endpoint}`, data);
     const loaders = document.getElementsByClassName('loader');
     loaders.forEach((l) => l.style.display = 'inherit');
     const body = {
-      state: (await idbKeyval.get('state')) || {},
+      state: (await idbKeyval.get('state')
+          .catch((err) => console.log('It failed!', err))) || {},
     };
     if (data) body.data = data;
     const {
@@ -29,15 +31,18 @@ WebState = {
         console.log('Error', error.message);
       }
     });
-    await idbKeyval.setMany(Object.keys(tables)
-        .map((table) => ([table, tables[table]])));
-    await idbKeyval.set('state', updatedState);
+    const updates = Object.keys(tables)
+        .map((table) => ([table, tables[table]]));
+    updates.push(['state', updatedState]);
+    await idbKeyval.setMany(updates)
+        .catch((err) => console.log('It failed!', err));
     await WebState.build();
     loaders.forEach((l) => l.style.display = 'none');
     return results;
   },
   getTable: async function(table, filters = null, fields = null) {
-    let records = await idbKeyval.get(table);
+    let records = await idbKeyval.get(table)
+        .catch((err) => console.log('It failed!', err));
     if (filters) {
       records = records.filter((record) => {
         let i = 0;
@@ -71,15 +76,17 @@ WebState = {
     return records;
   },
   getActive: async function(name) {
-    const state = (await idbKeyval.get('state')) || {};
+    const state = (await idbKeyval.get('state')
+        .catch((err) => console.log('It failed!', err))) || {};
     return state[name];
   },
   setActive: async function(name, table, id) {
-    const state = await idbKeyval.get('state');
+    const state = await idbKeyval.get('state')
+        .catch((err) => console.log('It failed!', err));
     const [record] = await WebState.getTable(table, [{
       key: 'id',
       value: id,
-    }]);
+    }]).catch((err) => console.log('It failed!', err));
     state[name] = record;
     await idbKeyval.set('state', state);
     return state[name];
@@ -88,9 +95,11 @@ WebState = {
     let data;
     let state;
     if (insertOnly === true) {
-      data = await idbKeyval.get(table);
+      data = await idbKeyval.get(table)
+          .catch((err) => console.log('It failed!', err));
     } else if (records.length === 1) {
-      const values = await idbKeyval.getMany([table, 'state']);
+      const values = await idbKeyval.getMany([table, 'state'])
+          .catch((err) => console.log('It failed!', err));
       data = values[0];
       state = values[1];
     }
@@ -103,10 +112,12 @@ WebState = {
       }
     }
     if (insertOnly === true) {
-      await idbKeyval.set(table, data);
+      await idbKeyval.set(table, data)
+          .catch((err) => console.log('It failed!', err));
     } else if (records.length === 1) {
       state[WebState.getStateNameFromTable(table)] = records[0];
-      await idbKeyval.setMany([table, 'state'], [data, state]);
+      await idbKeyval.setMany([[table, 'state'], [data, state]])
+          .catch((err) => console.log('It failed!', err));
     }
     WebState.build();
     const results = await WebState.run('upsert', {
@@ -117,9 +128,11 @@ WebState = {
     return results;
   },
   archive: async function(table, ids) {
-    let data = await idbKeyval.get(table);
+    let data = await idbKeyval.get(table)
+        .catch((err) => console.log('It failed!', err));
     data = data.filter((r) => ids.indexOf(r.id) === -1);
-    await idbKeyval.set(table, data);
+    await idbKeyval.set(table, data)
+        .catch((err) => console.log('It failed!', err));
     WebState.build();
     const results = await WebState.run('archive', {
       table,
@@ -256,7 +269,8 @@ WebState = {
           return self.indexOf(value) === index;
         });
     console.log('Dependencies', dependencies);
-    const data = await idbKeyval.getMany(dependencies);
+    const data = await idbKeyval.getMany(dependencies)
+        .catch((err) => console.log('It failed!', err));
     console.log('Data', data);
     for (const component of components) {
       const index = dependencies.findIndex((d) => component.dependency === d);
