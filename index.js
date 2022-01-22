@@ -106,7 +106,7 @@ WebState = {
     for (const record of records) {
       if (record.id) {
         const index = data.findIndex((r) => r.id === record.id);
-        data[index] = record;
+        data[index] = {...data[index], ...record};
       } else {
         data.push(record);
       }
@@ -282,6 +282,8 @@ WebState = {
   init: function({
     env,
   }) {
+    const loaders = document.getElementsByClassName('loader');
+    loaders.forEach((l) => l.style.display = 'inherit');
     WebState.api = env === 'DEV' ? 'https://dev.api.solucyon.com/' : 'https://api.solucyon.com/';
     MemberStack.onReady.then(async function(user) {
       if (user.loggedIn === true) {
