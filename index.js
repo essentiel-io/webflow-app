@@ -116,7 +116,7 @@ WebState = {
           .catch((err) => console.log('It failed!', err));
     } else if (records.length === 1) {
       state[WebState.getStateNameFromTable(table)] = records[0];
-      await idbKeyval.setMany([[table, 'state'], [data, state]])
+      await idbKeyval.setMany([[table, data], ['state', state]])
           .catch((err) => console.log('It failed!', err));
     }
     WebState.build();
