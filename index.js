@@ -1,6 +1,6 @@
 WebState = {
   getStateNameFromTable: function(table) {
-    table.replace(/s$/, '');
+    return table.replace(/s$/, '');
   },
   run: async function(endpoint, data = null) {
     const loaders = document.getElementsByClassName('loader');
@@ -271,7 +271,7 @@ WebState = {
     WebState.api = env === 'DEV' ? 'https://dev.api.solucyon.com/' : 'https://api.solucyon.com/';
     MemberStack.onReady.then(async function(user) {
       if (user.loggedIn === true) {
-        document.onload = WebState.build();
+        window.onload = WebState.build;
         await WebState.run('sync');
         console.log('Init done!');
       } else {
