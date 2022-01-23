@@ -243,7 +243,7 @@ WebState = (function() {
     for (const key in state) {
       if (state.hasOwnProperty(key)) {
         const record = {name: key, ...state[key]};
-        updates.push(tx.store.put(record, key));
+        updates.push(tx.store.put(record));
       }
     }
     await Promise.all([
@@ -294,7 +294,7 @@ WebState = (function() {
     console.log('Hydrate done!');
   }
 
-  async function build() {
+  function build() {
     const observer = new MutationObserver(() => {
       for (const component of components) {
         const elements = document.querySelectorAll(component.selector +
@@ -378,13 +378,10 @@ WebState = (function() {
     MemberStack.onReady.then(async function(user) {
       if (user.loggedIn === true) {
         await initDB();
-        await Promise.all([
-          build(),
-          run('sync'),
-        ]);
+        if (user.id !== state.logged_user?.value?.memberstack_id) await clearDB();
+        build();
+        await run('sync');
         console.log('Init done!');
-      } else {
-        await clearDB();
       }
     });
   }
