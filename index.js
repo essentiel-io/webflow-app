@@ -181,7 +181,7 @@ WebState = (function() {
   ];
 
   async function initDB() {
-    db = await idb.openDB('Solucyon', 3, {
+    db = await idb.openDB('Solucyon', 4, {
       upgrade(db) {
         const storeNames = Object.values(db.objectStoreNames);
         try {
@@ -242,7 +242,7 @@ WebState = (function() {
     const updates = [];
     for (const key in state) {
       if (state.hasOwnProperty(key)) {
-        const record = {name: key, ...state[key]};
+        const record = { name: key, ...state[key] };
         updates.push(tx.store.put(record));
       }
     }
@@ -295,7 +295,7 @@ WebState = (function() {
   }
 
   function build() {
-    const observer = new MutationObserver(() => {
+    const load = function () {
       for (const component of components) {
         const elements = document.querySelectorAll(component.selector +
           ':not([loaded])');
@@ -306,16 +306,16 @@ WebState = (function() {
           if (dependency) dependencies.push(dependency);
         });
       }
-    });
+    }
+    const observer = new MutationObserver(load);
     observer.observe(document, {
       childList: true,
       subtree: true,
     });
     window.onload = () => {
-      setTimeout(() => {
-        observer.disconnect();
-        console.log('Build done!');
-      }, 3000);
+      load();
+      observer.disconnect();
+      console.log('Build done!');
     };
   }
 
