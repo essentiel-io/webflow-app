@@ -19,14 +19,14 @@
 
 ### Listes
 
-- `[data-ws-list-table]`: Nom de la table
-- `[data-ws-list-filters]`: key|operator|value,... (Liste des filtres des données à afficher dans cette liste)
-- `input[data-ws-list-search]`: Nom de la table
-- `[data-ws-list-facets]`: Nom de la table
-- `[data-ws-list-record-id]`: Identifiant du record de la ligne
-- `[data-ws-list-field]`: Nom du champs
+- `table[data-ws-table]`: Nom de la table
+- `[data-ws-filters]`: key|operator|value,...
+- `[data-ws-header`: Nom du champ
+  
+- `input[data-ws-search]`: Nom de la table
+- `[data-ws-facets]`: Nom de la table
 
-=> Chaque liste est vidée puis reconstruite automatiquement en fonction de sa configuration et des données chargées.
+- `[data-ws-record-id]`: Identifiant du record de la ligne
 
 ### Boutons
 
