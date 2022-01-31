@@ -226,17 +226,17 @@ WebState = (function() {
         const status = button.getAttribute('data-ws-toggle-button');
         const content = toggle.querySelector('[data-ws-toggle-content]');
         const initStatus = content.getAttribute('data-ws-toggle-content');
-        const update = function() {
-          const { open } = (state[key] || { open: status === "open" });
-          if (open === false) {
+        const update = function(init = false) {
+          let { open } = (state[key] || { open: status === "open" });
+          if (!init) open = !open;
+          if (open) {
             content.style.display = initStatus;
             button.getElementsByClassName('material-icons')[0].innerText = 'expand_more';
-            return true;
           } else {
             content.style.display = 'none';
             button.getElementsByClassName('material-icons')[0].innerText = 'chevron_right';
-            return false;
           }
+          return open;
         }
         toggle.onclick = async function(e) {
           e.preventDefault();
@@ -245,7 +245,7 @@ WebState = (function() {
             await setState({ [key]: { open }});
           }
         }
-        update();
+        update(true);
       }
     }
   ];
