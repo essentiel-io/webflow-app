@@ -2,12 +2,22 @@ const axios = require('axios');
 const idb = require('idb');
 const Sortable = require('sortablejs');
 
+/**
+ * WebState
+ * @constructor
+ */
 WebState = (function() {
   let db;
   let url;
   let state = {};
   let database;
 
+  /**
+ * Get closest Parent Node
+ * @param {object} elem
+ * @param {string} selector
+ * @return {object}
+ */
   const getClosest = function(elem, selector) {
     for (; elem && elem !== document; elem = elem.parentNode) {
       if (elem.matches(selector)) return elem;
@@ -15,6 +25,10 @@ WebState = (function() {
     return null;
   };
 
+  /**
+ * Manage errors
+ * @param {object} err
+ */
   function error(err) {
     if (err.response) {
       console.log(err.response.data.error);
@@ -106,6 +120,7 @@ WebState = (function() {
           rows.forEach(function(row) {
             body.appendChild(row);
           });
+          Sortable.create(body);
         };
         hydrate();
         return {
@@ -184,6 +199,9 @@ WebState = (function() {
     },
   ];
 
+  /**
+ * Init Database
+ */
   async function initDB() {
     db = await idb.openDB('Solucyon', 4, {
       upgrade(db) {
@@ -215,6 +233,9 @@ WebState = (function() {
       ({...r, [name]: s}), {});
   }
 
+  /**
+ * Clear Database
+ */
   async function clearDB() {
     const tables = [];
     tables.push(db.clear('state'));
@@ -225,6 +246,11 @@ WebState = (function() {
     console.log('Clear done!');
   }
 
+  /**
+ * Execute request
+ * @param {string} endpoint
+ * @param {object} data
+ */
   async function run(endpoint, data) {
     const body = {state};
     if (data) body.data = data;
@@ -240,6 +266,10 @@ WebState = (function() {
     return result;
   }
 
+  /**
+ * Set new
+ * @param {object} newState
+ */
   async function setState(newState = {}) {
     state = {...state, ...newState};
     const tx = db.transaction('state', 'readwrite');
@@ -257,6 +287,9 @@ WebState = (function() {
     console.log('State set!');
   }
 
+  /**
+ * Reload State with data
+ */
   async function refreshState() {
     for (const key in state) {
       if (state.hasOwnProperty(key)) {
@@ -270,6 +303,10 @@ WebState = (function() {
     console.log('State refreshed!', state);
   }
 
+  /**
+ * Sync Client Database with Server
+ * @param {object} stores
+ */
   async function sync(stores) {
     for (const table of Object.keys(stores)) {
       const tx = db.transaction(table, 'readwrite');
@@ -287,6 +324,10 @@ WebState = (function() {
     console.log('Sync done!');
   }
 
+  /**
+ * Rebuild DOM with data
+ * @param {string} path
+ */
   async function hydrate(path) {
     const hydrates = [];
     for (const dependency of dependencies) {
@@ -298,6 +339,9 @@ WebState = (function() {
     console.log('Hydrate done!');
   }
 
+  /**
+ * Build DOM with data
+ */
   function build() {
     const load = function() {
       for (const component of components) {
@@ -316,13 +360,19 @@ WebState = (function() {
       childList: true,
       subtree: true,
     });
-    window.onload = () => {
+    window.onload = function() {
       load();
       observer.disconnect();
       console.log('Build done!');
     };
   }
 
+  /**
+ * Upsert data
+ * @param {string} table
+  * @param {array} records
+  * @param {boolean} insertOnly
+ */
   async function upsert(table, records, insertOnly = false) {
     const tx = db.transaction(table, 'readwrite');
     const store = tx.objectStore(table);
@@ -351,6 +401,11 @@ WebState = (function() {
     console.log('Upsert done!');
   }
 
+  /**
+ * Select state
+ * @param {string} table
+  * @param {string} recordId
+ */
   async function select(table, recordId) {
     await setState({['selected_' + table]: {id: recordId, table}});
     await refreshState();
@@ -358,6 +413,11 @@ WebState = (function() {
     console.log('Select done!');
   }
 
+  /**
+ * Archive data
+ * @param {string} table
+  * @param {array} ids
+ */
   async function archive(table, ids) {
     const tx = db.transaction(table, 'readwrite');
     const store = tx.objectStore(table);
@@ -376,13 +436,19 @@ WebState = (function() {
     console.log('Archive done!');
   }
 
+  /**
+ * Init WebState
+ * @param {object} params
+ */
   function init(params) {
     url = params.env === 'DEV' ? 'https://dev.api.solucyon.com/' : 'https://api.solucyon.com/';
     database = params.database;
     MemberStack.onReady.then(async function(user) {
       if (user.loggedIn === true) {
         await initDB();
-        if (user.id !== state.logged_user?.value?.memberstack_id) await clearDB();
+        if (user.id !== state.logged_user?.value?.memberstack_id) {
+          await clearDB();
+        }
         build();
         await run('sync');
         console.log('Init done!');
@@ -392,5 +458,3 @@ WebState = (function() {
 
   return {init};
 })();
-
-module.exports = WebState;
