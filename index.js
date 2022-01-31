@@ -6,11 +6,11 @@ const Sortable = require('sortablejs');
  * WebState
  * @constructor
  */
-WebState = (function() {
+(function WebState() {
   let db;
-  let url;
+  const url = window.location.hostname.search('.webflow.io') > -1 ?
+      'https://dev.api.solucyon.com/' : 'https://api.solucyon.com/';
   let state = {};
-  let database;
 
   /**
  * Get closest Parent Node
@@ -203,7 +203,24 @@ WebState = (function() {
  * Init Database
  */
   async function initDB() {
-    db = await idb.openDB('Solucyon', 4, {
+    const database = [
+      {
+        table: 'users',
+      },
+      {
+        table: 'organizations',
+      },
+      {
+        table: 'roles',
+      },
+      {
+        table: 'tasks',
+      },
+      {
+        table: 'needs',
+      },
+    ];
+    db = await idb.openDB('Solucyon', 5, {
       upgrade(db) {
         const storeNames = Object.values(db.objectStoreNames);
         try {
@@ -436,25 +453,18 @@ WebState = (function() {
     console.log('Archive done!');
   }
 
-  /**
- * Init WebState
- * @param {object} params
- */
-  function init(params) {
-    url = params.env === 'DEV' ? 'https://dev.api.solucyon.com/' : 'https://api.solucyon.com/';
-    database = params.database;
-    MemberStack.onReady.then(async function(user) {
-      if (user.loggedIn === true) {
-        await initDB();
-        if (user.id !== state.logged_user?.value?.memberstack_id) {
-          await clearDB();
-        }
-        build();
-        await run('sync');
-        console.log('Init done!');
+  MemberStack.onReady.then(async function(user) {
+    if (user.loggedIn === true) {
+      console.log('Logged in!');
+      await initDB();
+      if (user.id !== state.logged_user?.value?.memberstack_id) {
+        await clearDB();
       }
-    });
-  }
-
-  return {init};
+      build();
+      await run('sync');
+      console.log('Init done!');
+    } else {
+      console.log('Logged out');
+    }
+  });
 })();
