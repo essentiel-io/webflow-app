@@ -1,9 +1,16 @@
 {
   "scripts": {
-    "lint" : "./node_modules/.bin/eslint index.js --fix"
+    "lint": "./node_modules/.bin/eslint index.js --fix",
+    "build": "npm run lint && ./node_modules/.bin/browserify index.js -o bundle.js"
   },
   "devDependencies": {
+    "browserify": "17.0.0",
     "eslint": "8.7.0",
     "eslint-config-google": "0.14.0"
+  },
+  "dependencies": {
+    "axios": "0.25.0",
+    "idb": "7.0.0",
+    "sortablejs": "1.14.0"
   }
 }

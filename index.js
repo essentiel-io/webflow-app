@@ -1,6 +1,6 @@
-import axios from 'https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js';
-import idb from 'https://cdn.jsdelivr.net/npm/idb@7/build/umd-with-async-ittr.js';
-import Sortable from 'https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js';
+const axios = require('axios');
+const idb = require('idb');
+const Sortable = require('sortablejs');
 
 WebState = (function() {
   let db;
@@ -246,7 +246,7 @@ WebState = (function() {
     const updates = [];
     for (const key in state) {
       if (state.hasOwnProperty(key)) {
-        const record = { name: key, ...state[key] };
+        const record = {name: key, ...state[key]};
         updates.push(tx.store.put(record));
       }
     }
@@ -299,7 +299,7 @@ WebState = (function() {
   }
 
   function build() {
-    const load = function () {
+    const load = function() {
       for (const component of components) {
         const elements = document.querySelectorAll(component.selector +
           ':not([loaded])');
@@ -310,7 +310,7 @@ WebState = (function() {
           if (dependency) dependencies.push(dependency);
         });
       }
-    }
+    };
     const observer = new MutationObserver(load);
     observer.observe(document, {
       childList: true,
@@ -392,3 +392,5 @@ WebState = (function() {
 
   return {init};
 })();
+
+module.exports = WebState;
