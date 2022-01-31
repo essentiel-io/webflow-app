@@ -42,11 +42,6 @@
             <label for="exampleInputPassword1" class="form-label">Nom</label>
             <input name="name" type="text" class="form-control" id="exampleInputPassword1">
           </div>
-          <div class="mb-3">
-            <label for="exampleInputEmail1" class="form-label">Categorie</label>
-            <input name="category" type="text" class="form-control" id="exampleInputEmail1"
-              aria-describedby="emailHelp">
-          </div>
           <button type="submit" class="btn btn-primary">Insert Role</button>
         </form>
 
@@ -63,28 +58,58 @@
           <thead>
             <tr>
               <th scope="col" data-ws-header="name">Nom</th>
-              <th scope="col" data-ws-header="category">Categorie</th>
             </tr>
           </thead>
           <tbody>
             <tr>
               <td>Mark</td>
-              <td>Otto</td>
             </tr>
             <tr>
-              <td>Jacob</td>
-              <td>Thornton</td>
+              <td>Jacob</td>            
             </tr>
             <tr>
               <td>Larry the Bird</td>
-              <td>Thornton</td>
+            </tr>
+          </tbody>
+        </table>
+        <table class="table" data-ws-grid="tasks" data-ws-filters="">
+          <thead>
+            <tr>
+              <th scope="col" data-ws-header="name">Nom</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Mark</td>
+            </tr>
+            <tr>
+              <td>Jacob</td>
+            </tr>
+            <tr>
+              <td>Larry the Bird</td>
+            </tr>
+          </tbody>
+        </table>
+        <table class="table" data-ws-grid="needs" data-ws-filters="">
+          <thead>
+            <tr>
+              <th scope="col" data-ws-header="name">Nom</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Mark</td>
+            </tr>
+            <tr>
+              <td>Jacob</td>
+            </tr>
+            <tr>
+              <td>Larry the Bird</td>
             </tr>
           </tbody>
         </table>
       </div>
     </div>
-    <a href="#/ms/login">Connexion</a>
-
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"

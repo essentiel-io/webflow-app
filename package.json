@@ -3,12 +3,14 @@
   "version": "0.2.0",
   "scripts": {
     "lint": "./node_modules/.bin/eslint index.js --fix",
-    "build": "npm run lint && ./node_modules/.bin/browserify index.js -o bundle.js"
+    "build": "npm run lint && ./node_modules/.bin/browserify index.js -o bundle.js",
+    "dev": "./node_modules/.bin/watchify index.js -o bundle.js"
   },
   "devDependencies": {
     "browserify": "17.0.0",
     "eslint": "8.7.0",
-    "eslint-config-google": "0.14.0"
+    "eslint-config-google": "0.14.0",
+    "watchify": "4.0.0"
   },
   "dependencies": {
     "axios": "0.25.0",

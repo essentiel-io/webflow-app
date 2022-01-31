@@ -7,9 +7,26 @@ const Sortable = require('sortablejs');
  * WebState
  * @constructor
  */
-(function WebState() {
+WebState = (function () {
   let db;
-  const url = window.location.hostname.search('.webflow.io') > -1 ?
+  const database = [
+    {
+      table: 'users',
+    },
+    {
+      table: 'organizations',
+    },
+    {
+      table: 'roles',
+    },
+    {
+      table: 'tasks',
+    },
+    {
+      table: 'needs',
+    },
+  ];
+  const url = /(\.webflow\.io)|(127\.0\.0\.1)/.test(window.location.hostname) ?
       'https://dev.api.solucyon.com/' : 'https://api.solucyon.com/';
   let state = {};
 
@@ -77,7 +94,7 @@ const Sortable = require('sortablejs');
         };
         const hydrate = async function() {
           const recordState = state[key || `selected_${table}`];
-          if (recordState) {
+          if (recordState && recordState.value) {
             const record = recordState.value;
             form.setAttribute('data-ws-record-id', record.id);
             const fields = form.querySelectorAll('input:not([type="submit"])');
@@ -166,7 +183,7 @@ const Sortable = require('sortablejs');
         field.getAttribute('data-ws-field').split('.');
         const hydrate = async function() {
           const recordState = state[key || `selected_${table}`];
-          if (recordState) {
+          if (recordState && recordState.value) {
             const record = recordState.value;
             field.innerText = !!record && record[name];
           }
@@ -185,7 +202,7 @@ const Sortable = require('sortablejs');
         image.getAttribute('data-ws-image').split('.');
         const hydrate = async function() {
           const recordState = state[key || `selected_${table}`];
-          if (recordState) {
+          if (recordState && recordState.value) {
             const record = recordState.value;
             image.src = !!record && record[name][0];
             image.alt = !!record && record.name;
@@ -204,24 +221,7 @@ const Sortable = require('sortablejs');
  * Init Database
  */
   async function initDB() {
-    const database = [
-      {
-        table: 'users',
-      },
-      {
-        table: 'organizations',
-      },
-      {
-        table: 'roles',
-      },
-      {
-        table: 'tasks',
-      },
-      {
-        table: 'needs',
-      },
-    ];
-    db = await idb.openDB('Solucyon', 5, {
+    db = await idb.openDB('Solucyon', 6, {
       upgrade(db) {
         const storeNames = Object.values(db.objectStoreNames);
         try {
@@ -252,6 +252,31 @@ const Sortable = require('sortablejs');
   }
 
   /**
+ * Execute request
+ * @param {string} endpoint
+ * @param {object} data
+ */
+  async function run(endpoint, data) {
+    console.log(`Run ${url}${endpoint}`);
+    if (data) console.log('Data : ', data);
+    const body = {state};
+    if (data) body.data = data;
+    const res = await axios.post(url + endpoint, body, {
+      headers: {
+        'x-access-token': MemberStack.getToken(),
+      },
+    }).catch(error);
+    const {result, stores, state: updatedState} = res.data;
+    if (stores) {
+      await sync(stores, updatedState);
+    } else if (updatedState) {
+      await setState(updatedState);
+    }
+    console.log('Run done!');
+    return result;
+  }
+
+    /**
  * Clear Database
  */
   async function clearDB() {
@@ -264,51 +289,35 @@ const Sortable = require('sortablejs');
     console.log('Clear done!');
   }
 
-  /**
- * Execute request
- * @param {string} endpoint
- * @param {object} data
+    /**
+ * Sync Client Database with Server
+ * @param {object} stores
+ * @param {object} updatedState
  */
-  async function run(endpoint, data) {
-    const body = {state};
-    if (data) body.data = data;
-    const res = await axios.post(url + endpoint, body, {
-      headers: {
-        'x-access-token': MemberStack.getToken(),
-      },
-    }).catch(error);
-    const {result, stores} = res.data;
-    if (res.data.state) await setState(res.data.state);
-    if (stores) await sync(stores);
-    console.log('Run done!');
-    return result;
+  async function sync(stores, updatedState) {
+    await clearDB();
+    for (const table of Object.keys(stores)) {
+      const tx = db.transaction(table, 'readwrite');
+      const updates = [];
+      for (const record of stores[table]) {
+        updates.push(tx.store.add(record));
+      }
+      await Promise.all([
+        ...updates,
+        tx.done,
+      ]).catch(error);
+    }
+    await setState(updatedState);
+    console.log('Sync done!');
   }
 
   /**
  * Set new
  * @param {object} newState
+ * @param {string} path
  */
-  async function setState(newState = {}) {
+  async function setState(newState = {}, path) {
     state = {...state, ...newState};
-    const tx = db.transaction('state', 'readwrite');
-    const updates = [];
-    for (const key in state) {
-      if (state.hasOwnProperty(key)) {
-        const record = {name: key, ...state[key]};
-        updates.push(tx.store.put(record));
-      }
-    }
-    await Promise.all([
-      ...updates,
-      tx.done,
-    ]).catch(error);
-    console.log('State set!');
-  }
-
-  /**
- * Reload State with data
- */
-  async function refreshState() {
     for (const key in state) {
       if (state.hasOwnProperty(key)) {
         const {table, id} = state[key];
@@ -317,29 +326,20 @@ const Sortable = require('sortablejs');
         }
       }
     }
-    await setState();
-    console.log('State refreshed!', state);
-  }
-
-  /**
- * Sync Client Database with Server
- * @param {object} stores
- */
-  async function sync(stores) {
-    for (const table of Object.keys(stores)) {
-      const tx = db.transaction(table, 'readwrite');
-      const updates = [];
-      for (const record of stores[table]) {
-        updates.push(tx.store.put(record));
+    const tx = db.transaction('state', 'readwrite');
+    const updates = [];
+    for (const key in state) {
+      if (state.hasOwnProperty(key)) {
+        const record = {name: key, ...state[key]};
+        updates.push(tx.store.put(record, record.name));
       }
-      await Promise.all([
-        ...updates,
-        tx.done,
-      ]).catch(error);
     }
-    await refreshState();
-    await hydrate();
-    console.log('Sync done!');
+    await Promise.all([
+      ...updates,
+      tx.done,
+    ]).catch(error);
+    await hydrate(path);
+    console.log('State set!');
   }
 
   /**
@@ -361,7 +361,8 @@ const Sortable = require('sortablejs');
  * Build DOM with data
  */
   function build() {
-    const load = function() {
+    console.log('Build start', state);
+    function load() {
       for (const component of components) {
         const elements = document.querySelectorAll(component.selector +
           ':not([loaded])');
@@ -374,7 +375,7 @@ const Sortable = require('sortablejs');
       }
     };
     const observer = new MutationObserver(load);
-    observer.observe(document, {
+    observer.observe(document.body, {
       childList: true,
       subtree: true,
     });
@@ -383,6 +384,7 @@ const Sortable = require('sortablejs');
       observer.disconnect();
       console.log('Build done!');
     };
+    load();
   }
 
   /**
@@ -425,9 +427,7 @@ const Sortable = require('sortablejs');
   * @param {string} recordId
  */
   async function select(table, recordId) {
-    await setState({['selected_' + table]: {id: recordId, table}});
-    await refreshState();
-    await hydrate('state.' + table);
+    await setState({['selected_' + table]: {id: recordId, table}}, 'state.' + table);
     console.log('Select done!');
   }
 
@@ -465,9 +465,13 @@ const Sortable = require('sortablejs');
       await run('sync');
       console.log('Init done!');
     } else {
+      await initDB();
+      await clearDB();
       console.log('Logged out');
     }
   });
+
+  return () => state;
 })();
 
 },{"axios":2,"idb":31,"sortablejs":34}],2:[function(require,module,exports){
