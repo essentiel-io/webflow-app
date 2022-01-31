@@ -216,11 +216,11 @@ WebState = (function() {
       },
     },
     {
-      selector:'[data-ws-toggle]', 
+      selector: '[data-ws-toggle]',
       build: function(toggle) {
         let id = toggle.getAttribute('data-ws-toggle');
         if (id === 'recordId') {
-          id = toggle.getAttribute('data-ws-record-id')
+          id = toggle.getAttribute('data-ws-record-id');
         }
         const key = 'toggle_' + id;
         const button = toggle.querySelector('[data-ws-toggle-button]');
@@ -228,27 +228,29 @@ WebState = (function() {
         const content = toggle.querySelector('[data-ws-toggle-content]');
         const initStatus = content.getAttribute('data-ws-toggle-content');
         const update = function(init = false) {
-          let { open } = (state[key] || { open: status === "open" });
+          let {open} = (state[key] || {open: status === 'open'});
           if (!init) open = !open;
           if (open) {
             content.style.display = initStatus;
-            button.getElementsByClassName('material-icons')[0].innerText = 'expand_more';
+            button.getElementsByClassName('material-icons')[0]
+                .innerText = 'expand_more';
           } else {
             content.style.display = 'none';
-            button.getElementsByClassName('material-icons')[0].innerText = 'chevron_right';
+            button.getElementsByClassName('material-icons')[0]
+                .innerText = 'chevron_right';
           }
           return open;
-        }
+        };
         toggle.onclick = async function(e) {
           e.preventDefault();
           const open = update();
           if (!state[key] || open !== state[key].open) {
-            await setState({ [key]: { open }});
+            await setState({[key]: {open}});
           }
-        }
+        };
         update(true);
-      }
-    }
+      },
+    },
   ];
 
   /**
@@ -365,7 +367,7 @@ WebState = (function() {
     for (const key in state) {
       if (state.hasOwnProperty(key)) {
         const record = {name: key, ...state[key]};
-        updates.push(tx.store.put(record, key));
+        updates.push(tx.store.put(record));
       }
     }
     await Promise.all([
@@ -398,7 +400,8 @@ WebState = (function() {
     console.log('Build start', state);
     const load = () => {
       for (const component of components) {
-        const attribute = component.selector.match(/(?<=\[)data-ws-[a-z\-]+(?=\])/)[0]
+        const attribute = component.selector
+            .match(/(?<=\[)data-ws-[a-z\-]+(?=\])/)[0];
         const elements = document.querySelectorAll(component.selector +
           `:not([${attribute}-loaded])`);
         elements.forEach((element) => {
