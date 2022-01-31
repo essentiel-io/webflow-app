@@ -7,7 +7,7 @@ const Sortable = require('sortablejs');
  * WebState
  * @constructor
  */
-WebState = (function () {
+WebState = (function() {
   let db;
   const database = [
     {
@@ -215,6 +215,40 @@ WebState = (function () {
         };
       },
     },
+    {
+      selector:'[data-ws-toggle]', 
+      build: function(toggle) {
+        let id = toggle.getAttribute('data-ws-toggle');
+        if (id === 'recordId') {
+          id = toggle.getAttribute('data-ws-record-id')
+        }
+        const key = 'toggle_' + id;
+        const button = toggle.querySelector('[data-ws-toggle-button]');
+        const status = button.getAttribute('data-ws-toggle-button');
+        const content = toggle.querySelector('[data-ws-toggle-content]');
+        const initStatus = content.getAttribute('data-ws-toggle-content');
+        const update = function() {
+          const { open } = (state[key] || { open: status === "open" });
+          if (open === false) {
+            content.style.display = initStatus;
+            button.getElementsByClassName('material-icons')[0].innerText = 'expand_more';
+            return true;
+          } else {
+            content.style.display = 'none';
+            button.getElementsByClassName('material-icons')[0].innerText = 'chevron_right';
+            return false;
+          }
+        }
+        toggle.onclick = async function(e) {
+          e.preventDefault();
+          const open = update();
+          if (!state[key] || open !== state[key].open) {
+            await setState({ [key]: { open }});
+          }
+        }
+        update();
+      }
+    }
   ];
 
   /**
@@ -276,7 +310,7 @@ WebState = (function () {
     return result;
   }
 
-    /**
+  /**
  * Clear Database
  */
   async function clearDB() {
@@ -289,7 +323,7 @@ WebState = (function () {
     console.log('Clear done!');
   }
 
-    /**
+  /**
  * Sync Client Database with Server
  * @param {object} stores
  * @param {object} updatedState
@@ -331,7 +365,7 @@ WebState = (function () {
     for (const key in state) {
       if (state.hasOwnProperty(key)) {
         const record = {name: key, ...state[key]};
-        updates.push(tx.store.put(record, record.name));
+        updates.push(tx.store.put(record, key));
       }
     }
     await Promise.all([
@@ -362,13 +396,14 @@ WebState = (function () {
  */
   function build() {
     console.log('Build start', state);
-    function load() {
+    const load = () => {
       for (const component of components) {
+        const attribute = component.selector.match(/(?<=\[)data-ws-[a-z\-]+(?=\])/)[0]
         const elements = document.querySelectorAll(component.selector +
-          ':not([loaded])');
+          `:not([${attribute}-loaded])`);
         elements.forEach((element) => {
           console.log('Build ' + component.selector);
-          element.setAttribute('loaded', true);
+          element.setAttribute(attribute + '-loaded', true);
           const dependency = component.build(element);
           if (dependency) dependencies.push(dependency);
         });
@@ -427,7 +462,9 @@ WebState = (function () {
   * @param {string} recordId
  */
   async function select(table, recordId) {
-    await setState({['selected_' + table]: {id: recordId, table}}, 'state.' + table);
+    await setState({
+      ['selected_' + table]: {id: recordId, table},
+    }, 'state.' + table);
     console.log('Select done!');
   }
 
