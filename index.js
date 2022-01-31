@@ -1,9 +1,40 @@
+const axios = require('axios');
+const idb = require('idb');
+const Sortable = require('sortablejs');
+
+/**
+ * WebState
+ * @constructor
+ */
 WebState = (function() {
   let db;
-  let url;
+  const database = [
+    {
+      table: 'users',
+    },
+    {
+      table: 'organizations',
+    },
+    {
+      table: 'roles',
+    },
+    {
+      table: 'tasks',
+    },
+    {
+      table: 'needs',
+    },
+  ];
+  const url = /(\.webflow\.io)|(127\.0\.0\.1)/.test(window.location.hostname) ?
+      'https://dev.api.solucyon.com/' : 'https://api.solucyon.com/';
   let state = {};
-  let database;
 
+  /**
+ * Get closest Parent Node
+ * @param {object} elem
+ * @param {string} selector
+ * @return {object}
+ */
   const getClosest = function(elem, selector) {
     for (; elem && elem !== document; elem = elem.parentNode) {
       if (elem.matches(selector)) return elem;
@@ -11,6 +42,10 @@ WebState = (function() {
     return null;
   };
 
+  /**
+ * Manage errors
+ * @param {object} err
+ */
   function error(err) {
     if (err.response) {
       console.log(err.response.data.error);
@@ -58,7 +93,7 @@ WebState = (function() {
         };
         const hydrate = async function() {
           const recordState = state[key || `selected_${table}`];
-          if (recordState) {
+          if (recordState && recordState.value) {
             const record = recordState.value;
             form.setAttribute('data-ws-record-id', record.id);
             const fields = form.querySelectorAll('input:not([type="submit"])');
@@ -102,6 +137,7 @@ WebState = (function() {
           rows.forEach(function(row) {
             body.appendChild(row);
           });
+          Sortable.create(body);
         };
         hydrate();
         return {
@@ -146,7 +182,7 @@ WebState = (function() {
         field.getAttribute('data-ws-field').split('.');
         const hydrate = async function() {
           const recordState = state[key || `selected_${table}`];
-          if (recordState) {
+          if (recordState && recordState.value) {
             const record = recordState.value;
             field.innerText = !!record && record[name];
           }
@@ -165,7 +201,7 @@ WebState = (function() {
         image.getAttribute('data-ws-image').split('.');
         const hydrate = async function() {
           const recordState = state[key || `selected_${table}`];
-          if (recordState) {
+          if (recordState && recordState.value) {
             const record = recordState.value;
             image.src = !!record && record[name][0];
             image.alt = !!record && record.name;
@@ -178,10 +214,49 @@ WebState = (function() {
         };
       },
     },
+    {
+      selector: '[data-ws-toggle]',
+      build: function(toggle) {
+        let id = toggle.getAttribute('data-ws-toggle');
+        if (id === 'recordId') {
+          id = toggle.getAttribute('data-ws-record-id');
+        }
+        const key = 'toggle_' + id;
+        const button = toggle.querySelector('[data-ws-toggle-button]');
+        const status = button.getAttribute('data-ws-toggle-button');
+        const content = toggle.querySelector('[data-ws-toggle-content]');
+        const initStatus = content.getAttribute('data-ws-toggle-content');
+        const update = function(init = false) {
+          let {open} = (state[key] || {open: status === 'open'});
+          if (!init) open = !open;
+          if (open) {
+            content.style.display = initStatus;
+            button.getElementsByClassName('material-icons')[0]
+                .innerText = 'expand_more';
+          } else {
+            content.style.display = 'none';
+            button.getElementsByClassName('material-icons')[0]
+                .innerText = 'chevron_right';
+          }
+          return open;
+        };
+        toggle.onclick = async function(e) {
+          e.preventDefault();
+          const open = update();
+          if (!state[key] || open !== state[key].open) {
+            await setState({[key]: {open}});
+          }
+        };
+        update(true);
+      },
+    },
   ];
 
+  /**
+ * Init Database
+ */
   async function initDB() {
-    db = await idb.openDB('Solucyon', 4, {
+    db = await idb.openDB('Solucyon', 6, {
       upgrade(db) {
         const storeNames = Object.values(db.objectStoreNames);
         try {
@@ -211,6 +286,34 @@ WebState = (function() {
       ({...r, [name]: s}), {});
   }
 
+  /**
+ * Execute request
+ * @param {string} endpoint
+ * @param {object} data
+ */
+  async function run(endpoint, data) {
+    console.log(`Run ${url}${endpoint}`);
+    if (data) console.log('Data : ', data);
+    const body = {state};
+    if (data) body.data = data;
+    const res = await axios.post(url + endpoint, body, {
+      headers: {
+        'x-access-token': MemberStack.getToken(),
+      },
+    }).catch(error);
+    const {result, stores, state: updatedState} = res.data;
+    if (stores) {
+      await sync(stores, updatedState);
+    } else if (updatedState) {
+      await setState(updatedState);
+    }
+    console.log('Run done!');
+    return result;
+  }
+
+  /**
+ * Clear Database
+ */
   async function clearDB() {
     const tables = [];
     tables.push(db.clear('state'));
@@ -221,39 +324,35 @@ WebState = (function() {
     console.log('Clear done!');
   }
 
-  async function run(endpoint, data) {
-    const body = {state};
-    if (data) body.data = data;
-    const res = await axios.post(url + endpoint, body, {
-      headers: {
-        'x-access-token': MemberStack.getToken(),
-      },
-    }).catch(error);
-    const {result, stores} = res.data;
-    if (res.data.state) await setState(res.data.state);
-    if (stores) await sync(stores);
-    console.log('Run done!');
-    return result;
-  }
-
-  async function setState(newState = {}) {
-    state = {...state, ...newState};
-    const tx = db.transaction('state', 'readwrite');
-    const updates = [];
-    for (const key in state) {
-      if (state.hasOwnProperty(key)) {
-        const record = { name: key, ...state[key] };
-        updates.push(tx.store.put(record));
+  /**
+ * Sync Client Database with Server
+ * @param {object} stores
+ * @param {object} updatedState
+ */
+  async function sync(stores, updatedState) {
+    await clearDB();
+    for (const table of Object.keys(stores)) {
+      const tx = db.transaction(table, 'readwrite');
+      const updates = [];
+      for (const record of stores[table]) {
+        updates.push(tx.store.add(record));
       }
+      await Promise.all([
+        ...updates,
+        tx.done,
+      ]).catch(error);
     }
-    await Promise.all([
-      ...updates,
-      tx.done,
-    ]).catch(error);
-    console.log('State set!');
+    await setState(updatedState);
+    console.log('Sync done!');
   }
 
-  async function refreshState() {
+  /**
+ * Set new
+ * @param {object} newState
+ * @param {string} path
+ */
+  async function setState(newState = {}, path) {
+    state = {...state, ...newState};
     for (const key in state) {
       if (state.hasOwnProperty(key)) {
         const {table, id} = state[key];
@@ -262,27 +361,26 @@ WebState = (function() {
         }
       }
     }
-    await setState();
-    console.log('State refreshed!', state);
-  }
-
-  async function sync(stores) {
-    for (const table of Object.keys(stores)) {
-      const tx = db.transaction(table, 'readwrite');
-      const updates = [];
-      for (const record of stores[table]) {
+    const tx = db.transaction('state', 'readwrite');
+    const updates = [];
+    for (const key in state) {
+      if (state.hasOwnProperty(key)) {
+        const record = {name: key, ...state[key]};
         updates.push(tx.store.put(record));
       }
-      await Promise.all([
-        ...updates,
-        tx.done,
-      ]).catch(error);
     }
-    await refreshState();
-    await hydrate();
-    console.log('Sync done!');
+    await Promise.all([
+      ...updates,
+      tx.done,
+    ]).catch(error);
+    await hydrate(path);
+    console.log('State set!');
   }
 
+  /**
+ * Rebuild DOM with data
+ * @param {string} path
+ */
   async function hydrate(path) {
     const hydrates = [];
     for (const dependency of dependencies) {
@@ -294,31 +392,44 @@ WebState = (function() {
     console.log('Hydrate done!');
   }
 
+  /**
+ * Build DOM with data
+ */
   function build() {
-    const load = function () {
+    console.log('Build start', state);
+    const load = () => {
       for (const component of components) {
+        const attribute = component.selector
+            .match(/(?<=\[)data-ws-[a-z\-]+(?=\])/)[0];
         const elements = document.querySelectorAll(component.selector +
-          ':not([loaded])');
+          `:not([${attribute}-loaded])`);
         elements.forEach((element) => {
           console.log('Build ' + component.selector);
-          element.setAttribute('loaded', true);
+          element.setAttribute(attribute + '-loaded', true);
           const dependency = component.build(element);
           if (dependency) dependencies.push(dependency);
         });
       }
-    }
+    };
     const observer = new MutationObserver(load);
-    observer.observe(document, {
+    observer.observe(document.body, {
       childList: true,
       subtree: true,
     });
-    window.onload = () => {
+    window.onload = function() {
       load();
       observer.disconnect();
       console.log('Build done!');
     };
+    load();
   }
 
+  /**
+ * Upsert data
+ * @param {string} table
+  * @param {array} records
+  * @param {boolean} insertOnly
+ */
   async function upsert(table, records, insertOnly = false) {
     const tx = db.transaction(table, 'readwrite');
     const store = tx.objectStore(table);
@@ -347,13 +458,23 @@ WebState = (function() {
     console.log('Upsert done!');
   }
 
+  /**
+ * Select state
+ * @param {string} table
+  * @param {string} recordId
+ */
   async function select(table, recordId) {
-    await setState({['selected_' + table]: {id: recordId, table}});
-    await refreshState();
-    await hydrate('state.' + table);
+    await setState({
+      ['selected_' + table]: {id: recordId, table},
+    }, 'state.' + table);
     console.log('Select done!');
   }
 
+  /**
+ * Archive data
+ * @param {string} table
+  * @param {array} ids
+ */
   async function archive(table, ids) {
     const tx = db.transaction(table, 'readwrite');
     const store = tx.objectStore(table);
@@ -372,19 +493,22 @@ WebState = (function() {
     console.log('Archive done!');
   }
 
-  function init(params) {
-    url = params.env === 'DEV' ? 'https://dev.api.solucyon.com/' : 'https://api.solucyon.com/';
-    database = params.database;
-    MemberStack.onReady.then(async function(user) {
-      if (user.loggedIn === true) {
-        await initDB();
-        if (user.id !== state.logged_user?.value?.memberstack_id) await clearDB();
-        build();
-        await run('sync');
-        console.log('Init done!');
+  MemberStack.onReady.then(async function(user) {
+    if (user.loggedIn === true) {
+      console.log('Logged in!');
+      await initDB();
+      if (user.id !== state.logged_user?.value?.memberstack_id) {
+        await clearDB();
       }
-    });
-  }
+      build();
+      await run('sync');
+      console.log('Init done!');
+    } else {
+      await initDB();
+      await clearDB();
+      console.log('Logged out');
+    }
+  });
 
-  return {init};
+  return () => state;
 })();
