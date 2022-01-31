@@ -13,38 +13,8 @@
   <script src="https://api.memberstack.io/static/memberstack.js?webflow"
     data-memberstack-id="302c8a297698253d64309516320d8005"> </script>
 
-  <!-- Axios -->
-  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-
-  <!-- IDB -->
-  <script src="https://cdn.jsdelivr.net/npm/idb@7/build/umd-with-async-ittr.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/idb-keyval@6/dist/umd.js"></script>
-
-
   <!-- WebApp -->
-  <script src="./index.js"></script>
-  <script>
-    WebState.init({
-      env: "DEV",
-      database: [
-        {
-          table: "users"
-        },
-        {
-          table: "organizations"
-        },
-        {
-          table: "roles"
-        },
-        {
-          table: "teams"
-        },
-        {
-          table: "categories"
-        }
-      ]
-    });
-  </script>
+  <script src="./bundle.js" async></script>
 </head>
 
 <body>

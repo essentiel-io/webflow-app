@@ -8,6 +8,23 @@ const Sortable = require('sortablejs');
  */
 (function WebState() {
   let db;
+  const database = [
+    {
+      table: 'users',
+    },
+    {
+      table: 'organizations',
+    },
+    {
+      table: 'roles',
+    },
+    {
+      table: 'tasks',
+    },
+    {
+      table: 'needs',
+    },
+  ];
   const url = window.location.hostname.search('.webflow.io') > -1 ?
       'https://dev.api.solucyon.com/' : 'https://api.solucyon.com/';
   let state = {};
@@ -203,23 +220,6 @@ const Sortable = require('sortablejs');
  * Init Database
  */
   async function initDB() {
-    const database = [
-      {
-        table: 'users',
-      },
-      {
-        table: 'organizations',
-      },
-      {
-        table: 'roles',
-      },
-      {
-        table: 'tasks',
-      },
-      {
-        table: 'needs',
-      },
-    ];
     db = await idb.openDB('Solucyon', 5, {
       upgrade(db) {
         const storeNames = Object.values(db.objectStoreNames);
