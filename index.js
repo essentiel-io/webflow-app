@@ -1,3 +1,7 @@
+import axios from 'https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js';
+import idb from 'https://cdn.jsdelivr.net/npm/idb@7/build/umd-with-async-ittr.js';
+import Sortable from 'https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js';
+
 WebState = (function() {
   let db;
   let url;
