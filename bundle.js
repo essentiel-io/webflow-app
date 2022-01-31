@@ -115,9 +115,9 @@ WebState = (function() {
     {
       selector: 'table[data-ws-grid]',
       build: function(grid) {
-        const body = grid.querySelector('tbody');
-        const tr = body.querySelector('tr');
-        const td = body.querySelector('td');
+        const body = grid.querySelector('[data-ws-grid-body]');
+        const tr = body.querySelector('[data-ws-grid-row]');
+        const td = body.querySelector('[data-ws-grid-cell]');
         body.innerHTML = '';
         const table = grid.getAttribute('data-ws-grid');
         // const filters = grid.getAttribute('data-ws-filters');
