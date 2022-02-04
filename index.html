@@ -57,7 +57,7 @@
       </div>
 
       <div class="col">
-        <h2>Tables</h2> 
+        <h2>Table</h2> 
         <table class="table" data-ws-grid="roles" data-ws-filters="" data-ws-toggle="roles">
           <thead>
             <tr>
@@ -66,31 +66,29 @@
           </thead>
           <tbody data-ws-toggle-content="table-row-group" data-ws-grid-body="true">
             <tr data-ws-grid-row="true">
-              <td data-ws-grid-cell="true">Mark</td>
+              <td data-ws-grid-cell="true"></td>
             </tr>
           </tbody>
         </table>
-        <table class="table" data-ws-grid="tasks" data-ws-filters="">
-          <thead>
-            <tr>
-              <th scope="col" data-ws-header="name">Nom</th>
-            </tr>
-          </thead>
-          <tbody data-ws-grid-body="true">
-            <tr data-ws-grid-row="true">
-              <td data-ws-grid-cell="true">Mark</td>
-            </tr>
-          </tbody>
-        </table>
+
+        <h2>Liste</h2> 
+        <ul data-ws-grid="tasks" data-ws-filters="" data-ws-header="name">
+          <li data-ws-grid-row="true">
+            <span data-ws-grid-cell="true"></span>
+          </li>
+        </ul>
+
+        <h2>Table filtrée</h2> 
         <table class="table" data-ws-grid="needs" data-ws-filters="">
           <thead>
             <tr>
-              <th scope="col" data-ws-header="name">Nom</th>
+              <th scope="col" data-ws-header="title">Nom</th>
+              <th scope="col" data-ws-header="task">Tâche</th>
             </tr>
           </thead>
           <tbody data-ws-grid-body="true">
             <tr data-ws-grid-row="true">
-              <td data-ws-grid-cell="true">Mark</td>
+              <td data-ws-grid-cell="true"></td>
             </tr>
           </tbody>
         </table>

@@ -113,29 +113,41 @@ WebState = (function() {
       },
     },
     {
-      selector: 'table[data-ws-grid]',
+      selector: '[data-ws-grid]',
       build: function(grid) {
-        const body = grid.querySelector('[data-ws-grid-body]');
-        const tr = body.querySelector('[data-ws-grid-row]');
-        const td = body.querySelector('[data-ws-grid-cell]');
+        const body = grid.querySelector('[data-ws-grid-body]') || grid;
+        const row = body.querySelector('[data-ws-grid-row]');
+        const cell = body.querySelector('[data-ws-grid-cell]');
         body.innerHTML = '';
         const table = grid.getAttribute('data-ws-grid');
-        // const filters = grid.getAttribute('data-ws-filters');
-        const headers = grid.querySelectorAll('[data-ws-header]');
+        const filters = grid.getAttribute('data-ws-filters');
+        const headers = !!grid.getAttribute('data-ws-header') ? [grid] : grid.querySelectorAll('[data-ws-header]');
         const hydrate = async function() {
-          const records = await db.getAll(table).catch(error);
-          const rows = records.map((record) => {
-            const row = tr.cloneNode(true);
-            row.innerHTML = '';
-            for (const header of headers) {
-              const cell = td.cloneNode(true);
-              cell.innerText = record[header.getAttribute('data-ws-header')];
-              row.appendChild(cell);
+          let records = await db.getAll(table).catch(error);
+          /*records = records.filter(record => {
+
+          });*/
+          const rows = records.map((record, index) => {
+            const clonedRow = row.cloneNode(true);
+            clonedRow.innerHTML = '';
+            clonedRow.setAttribute('data-ws-record-id', record.id);
+            for (let header of headers) {
+              const clonedCell = cell.cloneNode(true);
+              const text = record[header.getAttribute('data-ws-header')]
+              clonedCell.innerText = String(record[header.getAttribute('data-ws-header')]).replace(/\{i\}/g, index + 1);
+              clonedRow.appendChild(clonedCell);
             }
-            return row;
+            return clonedRow;
           });
-          body.innerHTML = '';
           rows.forEach(function(row) {
+            row.onclick = function() {
+              setState({
+                ['selected_' + table]: {
+                  id: row.getAttribute('data-ws-record-id'),
+                  table,
+                }
+              }, table);
+            }
             body.appendChild(row);
           });
           Sortable.create(body);
